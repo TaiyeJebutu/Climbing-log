@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Route log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF0EC; --surface:#FFFFFF; --ink:#1C2433; --muted:#5E6878; --line:#D5DAD3; --dot:rgba(28,36,51,.10);
+  --focus:#2E9CCA; --danger:#C0392B; --ok:#2E8B57;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#151A23; --surface:#1E2530; --ink:#EEF0EC; --muted:#9AA3B2; --line:#2C3442; --dot:rgba(238,240,236,.07);
+    --danger:#E8735F; --ok:#5CC98A; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151A23; --surface:#1E2530; --ink:#EEF0EC; --muted:#9AA3B2; --line:#2C3442; --dot:rgba(238,240,236,.07);
+  --danger:#E8735F; --ok:#5CC98A; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  background-image:radial-gradient(var(--dot) 2px, transparent 2.5px);
+  background-size:30px 30px; background-position:15px 15px;
+  font-family:"Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size:17px; line-height:1.45; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:720px; margin:0 auto; padding:20px 18px 48px}
+h1{font-size:2rem; font-weight:800; letter-spacing:-.02em; margin:0}
+h2{font-size:1.45rem; font-weight:800; letter-spacing:-.01em; margin:0}
+h3{font-size:1.05rem; font-weight:600; margin:0 0 10px}
+p{margin:0}
+.muted{color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+button,input,select{font:inherit; color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--focus); outline-offset:2px}
+
+header{display:flex; align-items:center; justify-content:space-between; gap:12px}
+.seg{display:flex; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:3px; margin:18px 0 20px}
+.seg button{flex:1; border:0; background:transparent; padding:9px 10px; border-radius:999px; font-weight:600; color:var(--muted)}
+.seg button[aria-selected="true"]{background:var(--ink); color:var(--bg)}
+
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:20px}
+.panel + .panel{margin-top:16px}
+.btn{display:inline-block; border:1.5px solid var(--ink); background:transparent; border-radius:12px; padding:10px 16px; font-weight:600; text-align:center; cursor:pointer}
+.btn.primary{background:var(--ink); color:var(--bg)}
+.btn.danger{border-color:var(--danger); color:var(--danger)}
+.btn.small{padding:6px 12px; font-size:.92rem; border-radius:10px}
+.btn:disabled{opacity:.4; cursor:not-allowed}
+.btns{display:flex; flex-wrap:wrap; gap:10px}
+.back{border:0; background:transparent; padding:4px 0; font-weight:600; color:var(--muted); margin-bottom:12px}
+
+.field{display:block; font-weight:600; margin:0 0 18px}
+.field > span{display:block; margin-bottom:8px}
+input[type=text], input[type=date], input[type=number], select{
+  width:100%; padding:11px 13px; border-radius:12px; border:1.5px solid var(--line); background:var(--bg);
+}
+.inline{display:flex; gap:8px; margin-top:8px}
+.inline input{flex:1}
+
+.note{margin-top:12px; min-height:1.4em; font-size:.95rem}
+.note.err{color:var(--danger)}
+.note.good{color:var(--ok)}
+
+/* hold-shaped chips and swatches */
+.chip{display:inline-grid; place-items:center; min-width:48px; height:40px; padding:0 8px;
+  background:var(--hc); color:var(--hf); font-weight:800; border-radius:46% 54% 41% 59% / 55% 43% 57% 45%;
+  box-shadow:inset 0 -4px 0 rgba(0,0,0,.16), 0 0 0 1px rgba(0,0,0,.08)}
+.chip.big{min-width:74px; height:62px; font-size:1.4rem}
+.grades{display:grid; grid-template-columns:repeat(auto-fill,minmax(56px,1fr)); gap:8px}
+.grades button{border:1.5px solid var(--line); background:var(--bg); border-radius:12px; padding:9px 0; font-weight:700}
+.grades button[aria-pressed="true"]{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+.swatches{display:flex; flex-wrap:wrap; gap:12px}
+.swatch{border:0; background:transparent; padding:0; display:flex; flex-direction:column; align-items:center; gap:4px; font-size:.85rem; font-weight:600; width:62px}
+.swatch i{display:block; width:48px; height:42px; background:var(--hc); box-shadow:inset 0 -4px 0 rgba(0,0,0,.16), 0 0 0 1px rgba(0,0,0,.1)}
+.swatch[aria-pressed="true"] i{outline:3px solid var(--ink); outline-offset:3px}
+.swatch.add i{background:transparent; box-shadow:none; border:2px dashed var(--muted); display:grid; place-items:center; font-style:normal; font-size:1.4rem; color:var(--muted)}
+
+.filters{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:16px 0 4px}
+.filters select{padding:8px 10px; font-size:.92rem}
+@media (max-width:560px){ .filters{grid-template-columns:1fr 1fr} }
+.loc{margin:20px 0 6px; font-weight:600; color:var(--muted); font-size:.95rem}
+.routes{list-style:none; margin:0; padding:0}
+.routes li + li{border-top:1px solid var(--line)}
+.rrow{width:100%; display:flex; align-items:center; gap:14px; border:0; background:transparent; padding:10px 2px; text-align:left}
+.rrow .t{flex:1}
+.rrow .t strong{display:block; font-weight:600}
+.st{font-size:.92rem; font-weight:600; text-align:right}
+.st.none{color:var(--muted); font-weight:400}
+
+.route-head{display:flex; gap:16px; align-items:center; justify-content:space-between}
+.route-head .who{display:flex; gap:16px; align-items:center}
+.counter{display:grid; grid-template-columns:52px 1fr 88px; gap:8px; align-items:stretch}
+.counter button{border:1.5px solid var(--ink); background:transparent; border-radius:12px; font-weight:800; font-size:1.2rem}
+.counter .plus{background:var(--ink); color:var(--bg)}
+.counter input{text-align:center; font-size:1.3rem; font-weight:800}
+.check{display:flex; align-items:center; gap:10px; margin-top:14px; font-weight:600}
+.check input{width:22px; height:22px; accent-color:var(--ink)}
+.visits{list-style:none; margin:0; padding:0}
+.visits li{display:flex; align-items:center; gap:10px; border-top:1px solid var(--line)}
+.visits li:first-child{border-top:0}
+.visits .v{flex:1; border:0; background:transparent; text-align:left; padding:10px 2px; display:flex; justify-content:space-between; gap:10px}
+.visits .v[aria-current="true"]{font-weight:700}
+.badge{display:inline-block; font-size:.8rem; font-weight:700; padding:1px 8px; border-radius:99px; background:var(--ink); color:var(--bg)}
+.x{border:0; background:transparent; color:var(--muted); padding:6px 8px; border-radius:8px; font-size:.9rem}
+.x.armed{color:var(--danger); font-weight:600}
+
+.confirm{border:2px solid var(--ink)}
+.confirm ul{margin:8px 0 14px; padding-left:20px}
+.empty{text-align:center; padding:28px 14px}
+.empty p{margin-bottom:14px}
+.filebtn input{position:absolute; width:1px; height:1px; opacity:0}
+.filebtn:focus-within{outline:3px solid var(--focus); outline-offset:2px}
+.others{list-style:none; margin:0; padding:0}
+.others li{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--line)}
+.others li:first-child{border-top:0}
+.warn{background:var(--danger); color:#fff; padding:10px 14px; border-radius:12px; margin-bottom:14px}
+@media (max-width:420px){ .wrap{padding:14px 12px 40px} h1{font-size:1.7rem} .panel{padding:16px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>Route log</h1><span class="muted" id="who"></span></header>
+  <nav class="seg" role="tablist" aria-label="Sections" id="tabs">
+    <button role="tab" data-tab="routes">Routes</button>
+    <button role="tab" data-tab="archive">Archive</button>
+    <button role="tab" data-tab="files">Files</button>
+  </nav>
+  <main id="view"></main>
+</div>
+
+<script>
+(() => {
+  // ---------- constants ----------
+  const GRADES = ['VB','V0','V1','V2','V3','V4','V5','V6','V7','V8','V9','V10'];
+  const DEF_COLOURS = ['Red','Orange','Yellow','Green','Blue','Purple','Pink','Black','White'];
+  const HEX = {red:'#E4572E',orange:'#F28C28',yellow:'#F2C230',green:'#3BB273',blue:'#2E9CCA',purple:'#8E44AD',
+    pink:'#E86A9E',black:'#1E2229',white:'#F7F7F4',grey:'#8A929E',gray:'#8A929E',brown:'#7A4E2D',teal:'#1A9E96',mint:'#8FD9B6'};
+  const STATUS = {none:'Not tried', working:'Working on it', sent:'Sent', flash:'Flashed'};
+  const KEY = 'routelog.v1';
+
+  // ---------- helpers ----------
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const rid = () => 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+  const pad = n => String(n).padStart(2,'0');
+  const today = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; };
+  const isDate = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+  const fmtDate = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short',year:'numeric'}); };
+  const fmtStamp = t => t ? new Date(t).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}) : 'never';
+  const hex = c => HEX[String(c).toLowerCase()] || '#8A929E';
+  const fg = h => { const n = parseInt(h.slice(1),16), r=n>>16, g=(n>>8)&255, b=n&255; return (0.299*r+0.587*g+0.114*b)/255 > .6 ? '#1C2433' : '#fff'; };
+  const hc = c => `--hc:${hex(c)};--hf:${fg(hex(c))}`;
+  const gIdx = g => { const i = GRADES.indexOf(g); return i < 0 ? 99 : i; };
+  const sameCI = (list, v) => list.some(x => x.toLowerCase() === v.toLowerCase());
+  const label = r => `${esc(r.colour)} ${esc(r.grade)}`;
+
+  // ---------- state ----------
+  let storageOk = true;
+  function load(){
+    try{ const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) : null; }catch(e){ storageOk = false; return null; }
+  }
+  let S = load() || {};
+  S.name ??= ''; S.routes ??= {}; S.colours ??= DEF_COLOURS.slice(); S.locations ??= [];
+  S.log ??= {}; S.others ??= {}; S.lastExport ??= {routes:null, results:null};
+
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify(S)); storageOk = true; }catch(e){ storageOk = false; }
+  }
+  let askedPersist = false;
+  function askPersist(){
+    if(askedPersist) return; askedPersist = true;
+    try{ navigator.storage && navigator.storage.persist && navigator.storage.persist(); }catch(e){}
+  }
+
+  const ui = {
+    tab:'routes', screen:null, date:today(),
+    filters:{grade:'', colour:'', location:'', status:''},
+    form:null, pending:null, note:'', noteKind:'', armed:null
+  };
+  function setNote(text, kind){ ui.note = text; ui.noteKind = kind || ''; }
+  function arm(key){
+    ui.armed = key; render();
+    setTimeout(() => { if(ui.armed === key){ ui.armed = null; render(); } }, 3000);
+  }
+
+  // ---------- log & status ----------
+  function visits(id){
+    return (S.log[id] || []).filter(e => e.attempts > 0).sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+  }
+  function status(id){
+    const es = visits(id);
+    if(!es.length) return {kind:'none'};
+    let run = 0;
+    for(const e of es){
+      run += e.attempts;
+      if(e.sent) return {kind: run === 1 ? 'flash' : 'sent', toSend: run, visits: es.length};
+    }
+    return {kind:'working', total: run, visits: es.length};
+  }
+  function statusText(st, long){
+    if(st.kind === 'none') return long ? 'Not tried yet' : STATUS.none;
+    if(st.kind === 'flash') return long ? 'Flashed, sent on the first attempt' : STATUS.flash;
+    if(st.kind === 'sent') return long ? `Sent in ${st.toSend} attempts` : `Sent in ${st.toSend}`;
+    return long ? `Working on it, ${st.total} attempt${st.total===1?'':'s'} over ${st.visits} visit${st.visits===1?'':'s'}`
+                : `Working on it, ${st.total}`;
+  }
+  function entry(id, date){ return (S.log[id] || []).find(e => e.date === date); }
+  function setEntry(id, date, attempts, sent){
+    attempts = Math.max(0, Math.min(999, Math.floor(attempts) || 0));
+    if(sent && attempts < 1) attempts = 1;
+    let list = (S.log[id] || []).filter(e => e.date !== date);
+    if(attempts > 0) list.push({date, attempts, sent: !!sent});
+    if(list.length) S.log[id] = list; else delete S.log[id];
+    save(); askPersist();
+  }
+
+  // ---------- files ----------
+  function download(filename, obj){
+    const blob = new Blob([JSON.stringify(obj, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
+  }
+  async function shareFile(filename, obj){
+    const file = new File([JSON.stringify(obj, null, 2)], filename, {type:'application/json'});
+    try{ await navigator.share({files:[file], title: filename}); return true; }
+    catch(e){ return e && e.name === 'AbortError'; }
+  }
+  const canShareFiles = (() => {
+    try{ return !!(navigator.canShare && navigator.canShare({files:[new File(['{}'],'t.json',{type:'application/json'})]})); }catch(e){ return false; }
+  })();
+  const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'climber';
+
+  function routesFile(){
+    return {type:'route-log/routes', version:1, exportedAt:new Date().toISOString(),
+      colours:S.colours, locations:S.locations,
+      routes:Object.values(S.routes).filter(r => !r.archived).map(r => ({id:r.id, grade:r.grade, colour:r.colour, location:r.location}))};
+  }
+  function resultsFile(){
+    const routes = {};
+    Object.keys(S.log).forEach(id => { const r = S.routes[id]; if(r) routes[id] = {grade:r.grade, colour:r.colour, location:r.location}; });
+    return {type:'route-log/results', version:1, name:S.name, exportedAt:new Date().toISOString(), log:S.log, routes};
+  }
+  function cleanLog(log){
+    const out = {};
+    if(!log || typeof log !== 'object') return out;
+    Object.entries(log).forEach(([id, list]) => {
+      if(!Array.isArray(list)) return;
+      const seen = new Set();
+      const es = list.filter(e => e && isDate(e.date) && Number.isFinite(+e.attempts) && +e.attempts >= 1 && !seen.has(e.date) && seen.add(e.date))
+        .map(e => ({date:e.date, attempts:Math.min(999, Math.floor(+e.attempts)), sent:!!e.sent}));
+      if(es.length) out[String(id)] = es;
+    });
+    return out;
+  }
+  const str = v => typeof v === 'string' && v.trim() ? v.trim().slice(0,60) : null;
+
+  function readImport(file){
+    const reader = new FileReader();
+    reader.onload = () => {
+      let data;
+      try{ data = JSON.parse(reader.result); }catch(e){ setNote('That file couldn\'t be read. Pick a .json file exported from Route log.', 'err'); render(); return; }
+      if(data && data.type === 'route-log/routes') prepareRoutes(data);
+      else if(data && data.type === 'route-log/results') prepareResults(data);
+      else setNote('That file wasn\'t made by Route log. Pick a route file or a results file exported from this app.', 'err');
+      render();
+    };
+    reader.onerror = () => { setNote('That file couldn\'t be opened. Try picking it again.', 'err'); render(); };
+    reader.readAsText(file);
+  }
+  function prepareRoutes(data){
+    const incoming = (Array.isArray(data.routes) ? data.routes : [])
+      .map(r => r && ({id:str(r.id), grade:str(r.grade), colour:str(r.colour), location:str(r.location)}))
+      .filter(r => r && r.id && r.grade && r.colour && r.location);
+    const ids = new Set(incoming.map(r => r.id));
+    const added = [], changed = [], archived = [];
+    incoming.forEach(r => {
+      const l = S.routes[r.id];
+      if(!l) added.push(r);
+      else if(l.archived || l.grade !== r.grade || l.colour !== r.colour || l.location !== r.location) changed.push(r);
+    });
+    Object.values(S.routes).forEach(r => { if(!r.archived && !ids.has(r.id)) archived.push(r); });
+    ui.pending = {kind:'routes', incoming, added, changed, archived,
+      colours:(data.colours||[]).map(str).filter(Boolean), locations:(data.locations||[]).map(str).filter(Boolean), exportedAt:data.exportedAt};
+    setNote('');
+  }
+  function applyRoutes(p){
+    p.incoming.forEach(r => {
+      const l = S.routes[r.id];
+      if(!l) S.routes[r.id] = {id:r.id, grade:r.grade, colour:r.colour, location:r.location, archived:false};
+      else Object.assign(l, {grade:r.grade, colour:r.colour, location:r.location, archived:false, archivedOn:null});
+    });
+    p.archived.forEach(r => { r.archived = true; r.archivedOn = today(); });
+    [...p.colours, ...p.incoming.map(r => r.colour)].forEach(c => { if(!sameCI(S.colours, c)) S.colours.push(c); });
+    [...p.locations, ...p.incoming.map(r => r.location)].forEach(c => { if(!sameCI(S.locations, c)) S.locations.push(c); });
+    save(); askPersist();
+    setNote(`Route list updated: ${p.added.length} added, ${p.changed.length} changed, ${p.archived.length} moved to the archive.`, 'good');
+  }
+  function prepareResults(data){
+    const name = str(data.name) || 'Unnamed climber';
+    const log = cleanLog(data.log);
+    const routes = data.routes && typeof data.routes === 'object' ? data.routes : {};
+    ui.pending = {kind:'results', name, log, routes, exportedAt:data.exportedAt,
+      visits:Object.values(log).reduce((n,l) => n + l.length, 0), routeCount:Object.keys(log).length};
+    setNote('');
+  }
+  function restoreResults(p){
+    S.log = JSON.parse(JSON.stringify(p.log));
+    let restored = 0;
+    Object.keys(S.log).forEach(id => {
+      if(S.routes[id]) return;
+      const r = p.routes[id] || {};
+      S.routes[id] = {id, grade:str(r.grade)||'?', colour:str(r.colour)||'Unknown', location:str(r.location)||'Unknown', archived:true, archivedOn:null};
+      restored++;
+    });
+    save(); askPersist();
+    setNote(`Your log was restored.${restored ? ` ${restored} route${restored===1?' was':'s were'} not in your route list, so ${restored===1?'it is':'they are'} in the archive until you import a route file that includes ${restored===1?'it':'them'}.` : ''}`, 'good');
+  }
+  function storeOthers(p){
+    S.others[p.name] = {name:p.name, exportedAt:p.exportedAt || null, log:p.log};
+    save();
+    setNote(`Saved ${p.name}'s results for the group view.`, 'good');
+  }
+
+  // ---------- views ----------
+  const view = document.getElementById('view');
+
+  function renderWelcome(){
+    return `<section class="panel">
+      <h2>Welcome</h2>
+      <p class="muted" style="margin:8px 0 18px">Enter your name. It's added to your results file so your group can tell whose results are whose.</p>
+      <label class="field"><span>Your name</span><input type="text" id="nameInput" maxlength="40" autocomplete="name"></label>
+      <button class="btn primary" data-act="setName">Continue</button>
+      <p class="note err" role="status">${esc(ui.note)}</p>
+    </section>`;
+  }
+
+  function routeRow(r){
+    const st = status(r.id);
+    return `<li><button class="rrow" data-open="${esc(r.id)}">
+      <span class="chip num" style="${hc(r.colour)}">${esc(r.grade)}</span>
+      <span class="t"><strong>${label(r)}</strong><span class="muted">${esc(r.location)}</span></span>
+      <span class="st num ${st.kind}">${esc(statusText(st))}</span></button></li>`;
+  }
+  function sortRoutes(list){
+    return list.sort((a,b) => gIdx(a.grade)-gIdx(b.grade) || a.colour.localeCompare(b.colour));
+  }
+
+  function renderRoutes(){
+    const active = Object.values(S.routes).filter(r => !r.archived);
+    if(!active.length) return `<section class="panel empty">
+      <p>No routes yet. Add the routes in your gym one at a time, or import a route file from someone who already has.</p>
+      <div class="btns" style="justify-content:center"><button class="btn primary" data-act="newRoute">Add route</button>
+      <button class="btn" data-tab="files">Import a route file</button></div></section>`;
+    const f = ui.filters;
+    const shown = active.filter(r => (!f.grade || r.grade === f.grade) && (!f.colour || r.colour === f.colour)
+      && (!f.location || r.location === f.location) && (!f.status || status(r.id).kind === f.status));
+    const locOrder = [...S.locations, ...new Set(active.map(r => r.location).filter(l => !S.locations.includes(l)))];
+    const opt = (v, cur, text) => `<option value="${esc(v)}" ${v===cur?'selected':''}>${esc(text ?? v)}</option>`;
+    const usedGrades = GRADES.filter(g => active.some(r => r.grade === g));
+    const usedColours = [...new Set(active.map(r => r.colour))];
+    const groups = locOrder.map(loc => ({loc, rs: sortRoutes(shown.filter(r => r.location === loc))})).filter(g => g.rs.length);
+    return `<section class="panel">
+      <div class="route-head"><p class="muted num">${active.length} route${active.length===1?'':'s'}${shown.length!==active.length?`, ${shown.length} shown`:''}</p>
+        <button class="btn primary" data-act="newRoute">Add route</button></div>
+      <div class="filters">
+        <select data-filter="grade" aria-label="Filter by grade">${opt('',f.grade,'All grades')}${usedGrades.map(g => opt(g,f.grade)).join('')}</select>
+        <select data-filter="colour" aria-label="Filter by colour">${opt('',f.colour,'All colours')}${usedColours.map(c => opt(c,f.colour)).join('')}</select>
+        <select data-filter="location" aria-label="Filter by location">${opt('',f.location,'All locations')}${locOrder.filter(l => active.some(r => r.location===l)).map(l => opt(l,f.location)).join('')}</select>
+        <select data-filter="status" aria-label="Filter by status">${opt('',f.status,'Any status')}${Object.entries(STATUS).map(([k,v]) => opt(k,f.status,v)).join('')}</select>
+      </div>
+      ${groups.length ? groups.map(g => `<h3 class="loc">${esc(g.loc)}</h3><ul class="routes">${g.rs.map(routeRow).join('')}</ul>`).join('')
+        : `<p class="muted" style="margin-top:18px">No routes match these filters.</p>`}
+    </section>`;
+  }
+
+  function renderArchive(){
+    const list = Object.values(S.routes).filter(r => r.archived)
+      .sort((a,b) => (b.archivedOn||'').localeCompare(a.archivedOn||'') || gIdx(a.grade)-gIdx(b.grade));
+    if(!list.length) return `<section class="panel empty"><p>Routes removed from the gym will appear here, with your progress on them kept.</p></section>`;
+    return `<section class="panel"><p class="muted" style="margin-bottom:8px">${list.length} archived route${list.length===1?'':'s'}. You can view their logs, but not add new attempts.</p>
+      <ul class="routes">${list.map(routeRow).join('')}</ul></section>`;
+  }
+
+  function renderRoute(id){
+    const r = S.routes[id];
+    if(!r){ ui.screen = null; return renderTab(); }
+    const st = status(id);
+    const es = visits(id).slice().reverse();
+    const e = entry(id, ui.date) || {attempts:0, sent:false};
+    const logCard = r.archived ? `<section class="panel"><p class="muted">This route was archived${r.archivedOn?` on ${esc(fmtDate(r.archivedOn))}`:''}. Its log is kept, but new attempts can't be added.</p></section>`
+      : `<section class="panel">
+        <h3>Log a visit</h3>
+        <label class="field"><span>Date</span><input type="date" id="visitDate" value="${esc(ui.date)}" max="${today()}"></label>
+        <div class="field"><span id="attLabel">Attempts on this visit</span>
+          <div class="counter" role="group" aria-labelledby="attLabel">
+            <button data-act="minus" aria-label="Remove one attempt">−</button>
+            <input type="number" id="attempts" min="0" max="999" inputmode="numeric" value="${e.attempts}" aria-label="Attempts on this visit">
+            <button class="plus" data-act="plus">+1</button>
+          </div></div>
+        <label class="check"><input type="checkbox" id="sent" ${e.sent?'checked':''}> Sent on this visit</label>
+        <p class="note ${ui.noteKind}" role="status">${esc(ui.note)}</p>
+      </section>`;
+    return `<button class="back" data-act="back">‹ Back</button>
+      <section class="panel"><div class="route-head">
+        <div class="who"><span class="chip big num" style="${hc(r.colour)}">${esc(r.grade)}</span>
+          <div><h2>${label(r)}</h2><p class="muted">${esc(r.location)}</p></div></div>
+        ${r.archived ? '' : `<button class="btn small" data-act="editRoute">Edit</button>`}</div>
+        <p style="margin-top:14px; font-weight:600" class="num">${esc(statusText(st, true))}</p>
+      </section>
+      ${logCard}
+      <section class="panel"><h3>Visits</h3>
+        ${es.length ? `<ul class="visits">${es.map(v => `<li>
+          <button class="v num" data-pick="${esc(v.date)}" ${v.date===ui.date && !r.archived?'aria-current="true"':''} ${r.archived?'disabled':''}>
+            <span>${esc(fmtDate(v.date))}</span><span>${v.attempts} attempt${v.attempts===1?'':'s'} ${v.sent?'<span class="badge">Sent</span>':''}</span></button>
+          ${r.archived ? '' : `<button class="x ${ui.armed==='dv:'+v.date?'armed':''}" data-delvisit="${esc(v.date)}" aria-label="Delete visit on ${esc(fmtDate(v.date))}">${ui.armed==='dv:'+v.date?'Tap again to delete':'Delete'}</button>`}
+          </li>`).join('')}</ul>` : `<p class="muted">No visits logged yet.</p>`}
+      </section>`;
+  }
+
+  function renderForm(){
+    const f = ui.form;
+    const editing = !!f.id;
+    return `<button class="back" data-act="back">‹ Back</button>
+      <section class="panel">
+        <h2 style="margin-bottom:18px">${editing ? 'Edit route' : 'Add a route'}</h2>
+        <div class="field"><span id="gLab">Grade</span>
+          <div class="grades" role="group" aria-labelledby="gLab">${GRADES.map(g => `<button class="num" data-grade="${g}" aria-pressed="${f.grade===g}">${g}</button>`).join('')}</div></div>
+        <div class="field"><span id="cLab">Colour</span>
+          <div class="swatches" role="group" aria-labelledby="cLab">
+            ${S.colours.map(c => `<button class="swatch" data-colour="${esc(c)}" aria-pressed="${f.colour===c}" style="${hc(c)}"><i style="border-radius:46% 54% 41% 59% / 55% 43% 57% 45%"></i>${esc(c)}</button>`).join('')}
+            <button class="swatch add" data-act="showAddColour"><i style="border-radius:46% 54% 41% 59% / 55% 43% 57% 45%">+</i>Add colour</button>
+          </div>
+          ${f.addColour ? `<div class="inline"><input type="text" id="newColour" maxlength="30" placeholder="New colour name" aria-label="New colour name"><button class="btn" data-act="addColour">Add</button></div>` : ''}
+        </div>
+        <label class="field"><span>Location</span>
+          <select id="locSel">${S.locations.length ? '' : '<option value="">No locations yet, add one below</option>'}
+            ${S.locations.map(l => `<option value="${esc(l)}" ${f.location===l?'selected':''}>${esc(l)}</option>`).join('')}</select></label>
+        <div class="field" style="margin-top:-8px">
+          ${f.addLocation ? `<div class="inline"><input type="text" id="newLocation" maxlength="40" placeholder="New location, e.g. Cave" aria-label="New location name"><button class="btn" data-act="addLocation">Add</button></div>`
+            : `<button class="btn small" data-act="showAddLocation">Add location</button>`}
+        </div>
+        <div class="btns">
+          <button class="btn primary" data-act="saveRoute">Save route</button>
+          ${editing ? '' : `<button class="btn" data-act="saveAnother">Save and add another</button>`}
+        </div>
+        <p class="note ${ui.noteKind}" role="status">${esc(ui.note)}</p>
+      </section>
+      ${editing ? `<section class="panel"><h3>Remove from the gym</h3>
+        <p class="muted" style="margin-bottom:12px">Moves this route to the archive with your progress kept. Export the route list afterwards so others get the change.</p>
+        <button class="btn danger" data-act="archiveRoute">${ui.armed==='archive'?'Tap again to archive':'Archive route'}</button></section>` : ''}`;
+  }
+
+  function renderPending(){
+    const p = ui.pending; if(!p) return '';
+    if(p.kind === 'routes'){
+      return `<section class="panel confirm"><h3>Import route file${p.exportedAt?` from ${esc(fmtStamp(p.exportedAt))}`:''}?</h3>
+        <ul class="num"><li>${p.added.length} new route${p.added.length===1?'':'s'} added</li>
+          <li>${p.changed.length} route${p.changed.length===1?'':'s'} updated</li>
+          <li>${p.archived.length} route${p.archived.length===1?'':'s'} moved to the archive${p.archived.length?`: ${p.archived.slice(0,6).map(r => `${label(r)} (${esc(r.location)})`).join(', ')}${p.archived.length>6?', and more':''}`:''}</li></ul>
+        <p class="muted" style="margin-bottom:14px">Your own progress isn't changed.</p>
+        <div class="btns"><button class="btn primary" data-act="applyRoutes">Update my routes</button><button class="btn" data-act="cancelImport">Cancel</button></div></section>`;
+    }
+    const mine = p.name === S.name;
+    const current = Object.values(S.log).reduce((n,l) => n + l.length, 0);
+    return `<section class="panel confirm"><h3>Results from ${esc(p.name)}${p.exportedAt?`, exported ${esc(fmtStamp(p.exportedAt))}`:''}</h3>
+      <p class="num" style="margin-bottom:10px">${p.visits} visit${p.visits===1?'':'s'} on ${p.routeCount} route${p.routeCount===1?'':'s'}.</p>
+      <p class="muted" style="margin-bottom:14px">Restoring replaces your current log (${current} visit${current===1?'':'s'}) with this file. Saving it as ${esc(p.name)}'s results keeps it for the group view and leaves your log alone.</p>
+      <div class="btns">
+        <button class="btn ${mine?'primary':''}" data-act="restoreResults">Restore as my log</button>
+        <button class="btn ${mine?'':'primary'}" data-act="storeOthers">Save as ${esc(p.name)}'s results</button>
+        <button class="btn" data-act="cancelImport">Cancel</button></div></section>`;
+  }
+
+  function renderFiles(){
+    const others = Object.values(S.others).sort((a,b) => a.name.localeCompare(b.name));
+    const shareBtn = kind => canShareFiles ? `<button class="btn" data-act="share-${kind}">Share…</button>` : '';
+    return `${renderPending()}
+      ${ui.note && !ui.pending ? `<section class="panel"><p class="note ${ui.noteKind}" role="status" style="margin:0">${esc(ui.note)}</p></section>` : ''}
+      <section class="panel"><h3>Route list</h3>
+        <p class="muted" style="margin-bottom:14px">After adding, changing or archiving routes, export the route list and send it to your group. Importing one brings your routes up to date. Last exported: ${esc(fmtStamp(S.lastExport.routes))}.</p>
+        <div class="btns"><button class="btn primary" data-act="export-routes">Export route list</button>${shareBtn('routes')}
+          <label class="btn filebtn">Import a file<input type="file" accept=".json,application/json" data-import></label></div></section>
+      <section class="panel"><h3>My results</h3>
+        <p class="muted" style="margin-bottom:14px">Export after each visit to keep a backup and to share with your group. Last exported: ${esc(fmtStamp(S.lastExport.results))}.</p>
+        <div class="btns"><button class="btn primary" data-act="export-results">Export my results</button>${shareBtn('results')}
+          <label class="btn filebtn">Import a file<input type="file" accept=".json,application/json" data-import></label></div>
+        <p class="muted" style="margin-top:14px; font-size:.92rem">A full backup is both files: your route list and your results.</p></section>
+      <section class="panel"><h3>Group results</h3>
+        ${others.length ? `<ul class="others">${others.map(o => `<li><span><strong>${esc(o.name)}</strong><br><span class="muted num">${Object.values(o.log).reduce((n,l)=>n+l.length,0)} visits, exported ${esc(fmtStamp(o.exportedAt))}</span></span>
+          <button class="x ${ui.armed==='ro:'+o.name?'armed':''}" data-rmother="${esc(o.name)}">${ui.armed==='ro:'+o.name?'Tap again to remove':'Remove'}</button></li>`).join('')}</ul>`
+          : `<p class="muted">Results files you import from others are kept here, ready for the group view.</p>`}</section>
+      <section class="panel"><h3>Your name</h3>
+        <div class="inline" style="margin-top:0"><input type="text" id="nameEdit" maxlength="40" value="${esc(S.name)}" aria-label="Your name"><button class="btn" data-act="renameSelf">Save</button></div></section>`;
+  }
+
+  function renderTab(){
+    return ui.tab === 'routes' ? renderRoutes() : ui.tab === 'archive' ? renderArchive() : renderFiles();
+  }
+
+  function render(){
+    document.getElementById('tabs').hidden = !S.name;
+    document.getElementById('who').textContent = S.name;
+    document.querySelectorAll('[data-tab]').forEach(b => b.getAttribute('role')==='tab' && b.setAttribute('aria-selected', !ui.screen && b.dataset.tab===ui.tab));
+    let html = storageOk ? '' : `<div class="warn">This browser isn't letting the app save. Your changes will be lost when you close the page. Private browsing mode is a common cause.</div>`;
+    if(!S.name) html += renderWelcome();
+    else if(ui.screen && ui.screen.kind === 'route') html += renderRoute(ui.screen.id);
+    else if(ui.screen && ui.screen.kind === 'form') html += renderForm();
+    else html += renderTab();
+    view.innerHTML = html;
+  }
+
+  // ---------- actions ----------
+  function openForm(id){
+    const r = id && S.routes[id];
+    ui.form = r ? {id, grade:r.grade, colour:r.colour, location:r.location}
+                : {id:null, grade:ui.form?.lastGrade || null, colour:ui.form?.lastColour || null, location:ui.form?.lastLocation || S.locations[0] || null};
+    ui.screen = {kind:'form'}; setNote(''); render(); window.scrollTo(0,0);
+  }
+  function saveRoute(another){
+    const f = ui.form;
+    const sel = document.getElementById('locSel'); if(sel && sel.value) f.location = sel.value;
+    if(!f.grade || !f.colour || !f.location){ setNote('Choose a grade, a colour and a location to save the route.', 'err'); render(); return; }
+    if(f.id){
+      Object.assign(S.routes[f.id], {grade:f.grade, colour:f.colour, location:f.location});
+      save(); ui.screen = {kind:'route', id:f.id}; setNote('Route updated.', 'good'); render(); return;
+    }
+    const id = rid();
+    S.routes[id] = {id, grade:f.grade, colour:f.colour, location:f.location, archived:false};
+    save(); askPersist();
+    if(another){
+      ui.form = {id:null, grade:f.grade, colour:f.colour, location:f.location, lastGrade:f.grade, lastColour:f.colour, lastLocation:f.location};
+      setNote(`Added ${f.colour} ${f.grade} at ${f.location}. Add the next one.`, 'good'); render();
+    } else {
+      ui.screen = null; ui.tab = 'routes'; setNote(''); render();
+    }
+  }
+  function currentRouteId(){ return ui.screen && ui.screen.kind === 'route' ? ui.screen.id : null; }
+
+  document.addEventListener('click', async e => {
+    const t = e.target.closest('button'); if(!t) return;
+    const d = t.dataset, id = currentRouteId();
+    if(d.tab){ ui.tab = d.tab; ui.screen = null; ui.armed = null; setNote(''); render(); window.scrollTo(0,0); return; }
+    if(d.open){ ui.screen = {kind:'route', id:d.open}; ui.date = today(); setNote(''); render(); window.scrollTo(0,0); return; }
+    if(d.grade){ ui.form.grade = d.grade; keepLoc(); render(); return; }
+    if(d.colour){ ui.form.colour = d.colour; keepLoc(); render(); return; }
+    if(d.pick){ ui.date = d.pick; setNote(''); render(); window.scrollTo(0,0); return; }
+    if(d.delvisit){
+      if(ui.armed === 'dv:'+d.delvisit){ ui.armed = null; setEntry(id, d.delvisit, 0, false); setNote('Visit deleted.', 'good'); render(); }
+      else arm('dv:'+d.delvisit);
+      return;
+    }
+    if(d.rmother){
+      if(ui.armed === 'ro:'+d.rmother){ ui.armed = null; delete S.others[d.rmother]; save(); render(); } else arm('ro:'+d.rmother);
+      return;
+    }
+    switch(d.act){
+      case 'setName': {
+        const v = document.getElementById('nameInput').value.trim();
+        if(!v){ setNote('Enter a name to continue.', 'err'); render(); return; }
+        S.name = v; save(); setNote(''); render(); return;
+      }
+      case 'renameSelf': {
+        const v = document.getElementById('nameEdit').value.trim();
+        if(v){ S.name = v; save(); setNote('Name saved.', 'good'); render(); } return;
+      }
+      case 'back': ui.screen = (ui.screen?.kind === 'form' && ui.form?.id) ? {kind:'route', id:ui.form.id} : null; ui.armed = null; setNote(''); render(); return;
+      case 'newRoute': openForm(null); return;
+      case 'editRoute': openForm(id); return;
+      case 'showAddColour': keepLoc(); ui.form.addColour = true; render(); document.getElementById('newColour')?.focus(); return;
+      case 'showAddLocation': keepLoc(); ui.form.addLocation = true; render(); document.getElementById('newLocation')?.focus(); return;
+      case 'addColour': {
+        keepLoc();
+        const v = document.getElementById('newColour').value.trim();
+        if(!v) return;
+        const existing = S.colours.find(c => c.toLowerCase() === v.toLowerCase());
+        if(!existing) S.colours.push(v);
+        ui.form.colour = existing || v; ui.form.addColour = false; save(); setNote(''); render(); return;
+      }
+      case 'addLocation': {
+        const v = document.getElementById('newLocation').value.trim();
+        if(!v) return;
+        const existing = S.locations.find(l => l.toLowerCase() === v.toLowerCase());
+        if(!existing) S.locations.push(v);
+        ui.form.location = existing || v; ui.form.addLocation = false; save(); setNote(''); render(); return;
+      }
+      case 'saveRoute': saveRoute(false); return;
+      case 'saveAnother': saveRoute(true); return;
+      case 'archiveRoute':
+        if(ui.armed === 'archive'){
+          ui.armed = null; const r = S.routes[ui.form.id]; r.archived = true; r.archivedOn = today(); save();
+          ui.screen = null; ui.tab = 'archive'; setNote(''); render();
+        } else arm('archive');
+        return;
+      case 'plus': case 'minus': {
+        const cur = entry(id, ui.date) || {attempts:0, sent:false};
+        const n = cur.attempts + (d.act === 'plus' ? 1 : -1);
+        setEntry(id, ui.date, n, n > 0 && cur.sent);
+        setNote(d.act === 'plus' ? `Attempt ${Math.max(n,0)} logged.` : 'Attempt removed.', 'good'); render(); return;
+      }
+      case 'export-routes': download(`routes-${today()}.json`, routesFile()); S.lastExport.routes = Date.now(); save(); setNote('Route list exported.', 'good'); render(); return;
+      case 'export-results': download(`results-${slug(S.name)}-${today()}.json`, resultsFile()); S.lastExport.results = Date.now(); save(); setNote('Your results were exported.', 'good'); render(); return;
+      case 'share-routes': if(await shareFile(`routes-${today()}.json`, routesFile())){ S.lastExport.routes = Date.now(); save(); render(); } return;
+      case 'share-results': if(await shareFile(`results-${slug(S.name)}-${today()}.json`, resultsFile())){ S.lastExport.results = Date.now(); save(); render(); } return;
+      case 'applyRoutes': applyRoutes(ui.pending); ui.pending = null; render(); return;
+      case 'restoreResults': restoreResults(ui.pending); ui.pending = null; render(); return;
+      case 'storeOthers': storeOthers(ui.pending); ui.pending = null; render(); return;
+      case 'cancelImport': ui.pending = null; setNote('Import cancelled. Nothing was changed.'); render(); return;
+    }
+  });
+  function keepLoc(){ const sel = document.getElementById('locSel'); if(sel && sel.value && ui.form) ui.form.location = sel.value; }
+
+  document.addEventListener('change', e => {
+    const t = e.target, id = currentRouteId();
+    if(t.dataset.filter !== undefined){ ui.filters[t.dataset.filter] = t.value; render(); return; }
+    if(t.matches('[data-import]')){ const file = t.files && t.files[0]; if(file) readImport(file); t.value = ''; return; }
+    if(t.id === 'locSel'){ ui.form.location = t.value; return; }
+    if(t.id === 'visitDate'){ ui.date = isDate(t.value) ? t.value : today(); setNote(''); render(); return; }
+    if(t.id === 'attempts'){
+      const cur = entry(id, ui.date) || {sent:false};
+      const n = parseInt(t.value, 10) || 0;
+      setEntry(id, ui.date, n, n > 0 && cur.sent);
+      setNote(n > 0 ? `${n} attempt${n===1?'':'s'} saved for this visit.` : 'Visit cleared.', 'good'); render(); return;
+    }
+    if(t.id === 'sent'){
+      const cur = entry(id, ui.date) || {attempts:0};
+      setEntry(id, ui.date, cur.attempts, t.checked);
+      setNote(t.checked ? 'Marked as sent on this visit.' : 'Send removed.', 'good'); render(); return;
+    }
+  });
+  document.addEventListener('keydown', e => {
+    if(e.key !== 'Enter') return;
+    const map = {nameInput:'setName', nameEdit:'renameSelf', newColour:'addColour', newLocation:'addLocation'};
+    const act = map[e.target.id]; if(act){ e.preventDefault(); document.querySelector(`[data-act="${act}"]`)?.click(); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
