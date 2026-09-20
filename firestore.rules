@@ -1,0 +1,80 @@
+rules_version = '2';
+
+// Route log security rules.
+// Paste this whole file into Firebase: Firestore Database > Rules > Publish.
+//
+// In short:
+//  - You must be signed in for anything.
+//  - Only members of a group can see its gyms, routes and logs.
+//  - Anyone with the invite link (which contains the group's ID) can join, unless the creator removed them.
+//  - Any member can add and edit gyms, routes, colours and locations. Nothing can be deleted except your own log entries.
+//  - You can only change your own log.
+//  - Only the group's creator can remove members.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function groupPath(g) { return /databases/$(database)/documents/groups/$(g); }
+    function isMember(g) {
+      return signedIn() && exists(/databases/$(database)/documents/groups/$(g)/members/$(request.auth.uid));
+    }
+    function isCreator(g) {
+      return signedIn() && get(groupPath(g)).data.createdBy == request.auth.uid;
+    }
+    function shortText(v, max) { return v is string && v.size() > 0 && v.size() <= max; }
+
+    // Remembers which group each person belongs to, so a new device finds it after sign-in.
+    match /users/{userId} {
+      allow read, write: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /groups/{g} {
+      // Knowing the group ID (from the invite link) lets a signed-in person see the group's name before joining.
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && request.resource.data.createdBy == request.auth.uid
+        && shortText(request.resource.data.name, 40)
+        && request.resource.data.removed == [];
+      // Members can change colours and locations. Only the creator can change who is removed.
+      allow update: if isMember(g)
+        && request.resource.data.createdBy == resource.data.createdBy
+        && (request.resource.data.get('removed', []) == resource.data.get('removed', []) || isCreator(g));
+      allow delete: if false;
+
+      match /members/{memberId} {
+        allow read: if isMember(g);
+        allow create: if signedIn() && request.auth.uid == memberId
+          && !(request.auth.uid in getAfter(groupPath(g)).data.get('removed', []))
+          && shortText(request.resource.data.name, 40);
+        allow update: if signedIn() && request.auth.uid == memberId && shortText(request.resource.data.name, 40);
+        allow delete: if signedIn() && (request.auth.uid == memberId || isCreator(g));
+      }
+
+      match /gyms/{gymId} {
+        allow read: if isMember(g);
+        allow create, update: if isMember(g) && shortText(request.resource.data.name, 40);
+        allow delete: if false;
+      }
+
+      match /routes/{routeId} {
+        allow read: if isMember(g);
+        allow create, update: if isMember(g) && request.resource.data.gymId is string;
+        allow delete: if false;
+      }
+
+      // One document per person per route. Everyone in the group can read them; only the owner can change them.
+      match /logs/{logId} {
+        allow read: if isMember(g);
+        allow create: if isMember(g)
+          && request.resource.data.uid == request.auth.uid
+          && logId == request.auth.uid + '_' + request.resource.data.routeId;
+        allow update: if isMember(g)
+          && resource.data.uid == request.auth.uid
+          && request.resource.data.uid == request.auth.uid;
+        allow delete: if isMember(g) && resource.data.uid == request.auth.uid;
+      }
+    }
+  }
+}
